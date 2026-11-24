@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Executive Workday & Client Command Center</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f4f7fb; color: #0f172a; }
+    .royal-gradient { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); }
+    .card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04); }
+    .completed-row { background-color: #dcfce7 !important; border-color: #86efac !important; transition: all 0.25s ease; }
+    .completed-row .task-title { text-decoration: line-through; color: #166534; }
+    .non-nego-badge { background-color: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="royal-gradient text-white shadow-md sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center font-extrabold text-xl border border-white/25">
+          W
+        </div>
+        <div>
+          <h1 class="text-lg sm:text-xl font-bold tracking-tight">Workday & Client Command Center</h1>
+          <p class="text-xs text-blue-100" id="headerDateDisplay">Loading date...</p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <button onclick="openGoogleSyncModal()" class="px-3.5 py-2 rounded-lg bg-white text-blue-900 font-semibold text-xs sm:text-sm hover:bg-blue-50 transition flex items-center gap-2 shadow-sm">
+          <svg class="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+          <span id="gcalStatusText">Sync Google Calendar</span>
+        </button>
+        <button onclick="exportICS()" class="px-3 py-2 rounded-lg bg-blue-800/70 hover:bg-blue-800 text-white border border-blue-400/30 text-xs sm:text-sm font-medium transition">
+          Export .ICS
+        </button>
+      </div>
+    </div>
+
+    <!-- SUB-NAV TABS -->
+    <div class="bg-blue-950/40 border-t border-white/10">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 flex gap-1 overflow-x-auto">
+        <button onclick="switchTab('daily')" id="tab-daily" class="tab-btn px-4 py-2.5 text-xs sm:text-sm font-semibold border-b-2 border-white text-white whitespace-nowrap">
+          1. Calendar & Daily Activities
+        </button>
+        <button onclick="switchTab('workday')" id="tab-workday" class="tab-btn px-4 py-2.5 text-xs sm:text-sm font-semibold border-b-2 border-transparent text-blue-200 hover:text-white whitespace-nowrap">
+          2. Structured Workday (Time-Box)
+        </button>
+        <button onclick="switchTab('clients')" id="tab-clients" class="tab-btn px-4 py-2.5 text-xs sm:text-sm font-semibold border-b-2 border-transparent text-blue-200 hover:text-white whitespace-nowrap">
+          3. Client Pipeline & Deliverables
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 flex-1">
+
+    <!-- ========================================================= -->
+    <!-- TAB 1: CALENDAR & DAILY ACTIVITIES                        -->
+    <!-- ========================================================= -->
+    <section id="view-daily" class="space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- LEFT: INTERACTIVE CALENDAR (7 COLS) -->
+        <div class="lg:col-span-7 card p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="text-base sm:text-lg font-bold text-blue-950" id="calMonthYear">Month Year</h2>
+              <p class="text-xs text-slate-500">Click any date to view or sync scheduled activities</p>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button onclick="changeMonth(-1)" class="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-blue-50 text-blue-900 text-sm font-bold">&lt;</button>
+              <button onclick="goToday()" class="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-semibold">Today</button>
+              <button onclick="changeMonth(1)" class="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-blue-50 text-blue-900 text-sm font-bold">&gt;</button>
+            </div>
+          </div>
+
+          <!-- Days Header -->
+          <div class="grid grid-cols-7 text-center text-xs font-bold text-blue-800 bg-blue-50/80 py-2 rounded-lg mb-2">
+            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+          </div>
+
+          <!-- Calendar Grid -->
+          <div id="calendarGrid" class="grid grid-cols-7 gap-1.5"></div>
+
+          <!-- Synced Google Calendar Events Banner -->
+          <div id="gcalEventsBox" class="mt-4 pt-4 border-t border-slate-100 hidden">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-blue-700">Google Calendar Events (Selected Date)</span>
+              <span class="text-[11px] text-emerald-600 font-semibold">● Live Synced</span>
+            </div>
+            <div id="gcalEventsList" class="space-y-1.5 text-xs"></div>
+          </div>
+        </div>
+
+        <!-- RIGHT: DAILY ACTIVITIES & CHECKLIST (5 COLS) -->
+        <div class="lg:col-span-5 card p-5 flex flex-col">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h2 class="text-base sm:text-lg font-bold text-blue-950">Daily Activities</h2>
+              <p class="text-xs text-blue-600 font-semibold" id="selectedDateLabel">Selected Date</p>
+            </div>
+            <span id="dailyProgressBadge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800">0/0 Done</span>
+          </div>
+
+          <!-- Add Activity Form -->
+          <form onsubmit="addDailyActivity(event)" class="bg-blue-50/60 p-3.5 rounded-xl border border-blue-100 space-y-2.5 mb-4">
+            <input type="text" id="actTitle" required placeholder="Activity, meeting, or task title..." class="w-full px-3 py-2 text-sm bg-white border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Date</label>
+                <input type="date" id="actDate" required class="w-full px-2.5 py-1.5 text-xs bg-white border border-blue-200 rounded-lg">
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Time</label>
+                <input type="time" id="actTime" required value="09:00" class="w-full px-2.5 py-1.5 text-xs bg-white border border-blue-200 rounded-lg">
+              </div>
+            </div>
+            <div class="flex items-center justify-between pt-1">
+              <label class="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer">
+                <input type="checkbox" id="actSyncGcal" checked class="rounded text-blue-600">
+                <span>Sync to Google Calendar</span>
+              </label>
+              <button type="submit" class="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition">
+                + Add & Sync
+              </button>
+            </div>
+          </form>
+
+          <!-- Checklist -->
+          <div id="dailyActivityList" class="space-y-2 overflow-y-auto max-h-[380px] custom-scroll flex-1 pr-1">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- TAB 2: STRUCTURED WORKDAY & DYNAMIC TIME-BOXING           -->
+    <!-- ========================================================= -->
+    <section id="view-workday" class="hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- LEFT: MONTHLY ROUTINE & NON-NEGOTIABLES SETUP (5 COLS) -->
+        <div class="lg:col-span-5 space-y-5">
+          <div class="card p-5">
+            <h2 class="text-base sm:text-lg font-bold text-blue-950 mb-1">Monthly Recurring Activities</h2>
+            <p class="text-xs text-slate-500 mb-4">Define your monthly activities, expected duration, usual schedule day, and priority lock status.</p>
+
+            <form onsubmit="addRoutineTemplate(event)" class="space-y-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Activity Name</label>
+                <input type="text" id="rtTitle" required placeholder="e.g., Client Prospecting / Policy Review" class="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg">
+              </div>
+
+              <div class="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Expected Duration</label>
+                  <div class="flex gap-1">
+                    <input type="number" id="rtDurationVal" min="5" step="5" value="60" required class="w-full px-2.5 py-1.5 text-sm bg-white border border-slate-300 rounded-lg">
+                    <select id="rtDurationUnit" class="px-2 py-1.5 text-xs bg-white border border-slate-300 rounded-lg font-medium">
+                      <option value="mins">mins</option>
+                      <option value="hrs">hrs</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Usual Day</label>
+                  <select id="rtDay" class="w-full px-2.5 py-1.5 text-sm bg-white border border-slate-300 rounded-lg">
+                    <option value="Daily">Daily (Mon-Fri)</option>
+                    <option value="Monday">Monday</option>
+                    <option value="Tuesday">Tuesday</option>
+                    <option value="Wednesday">Wednesday</option>
+                    <option value="Thursday">Thursday</option>
+                    <option value="Friday">Friday</option>
+                    <option value="Saturday">Saturday</option>
+                    <option value="Monthly-1st">First Week of Month</option>
+                    <option value="Monthly-End">Month-End Closing</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between pt-1">
+                <label class="flex items-center gap-2 text-xs font-bold text-blue-900 cursor-pointer">
+                  <input type="checkbox" id="rtNonNego" class="w-4 h-4 rounded text-blue-600">
+                  <span>Non-Negotiable Activity</span>
+                </label>
+                <button type="submit" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold">
+                  + Save Activity
+                </button>
+              </div>
+            </form>
+
+            <!-- Saved Monthly Routines List -->
+            <div class="mt-4">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Monthly Activity Master List</h3>
+              <div id="routineMasterList" class="space-y-2 max-h-[300px] overflow-y-auto custom-scroll pr-1"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: SUGGESTED TIME-BOX & SUDDEN TASK RE-BALANCER (7 COLS) -->
+        <div class="lg:col-span-7 space-y-5">
+          <div class="card p-5">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
+              <div>
+                <h2 class="text-base sm:text-lg font-bold text-blue-950">Suggested Time-Boxed Workday</h2>
+                <p class="text-xs text-slate-500">Automatically re-balances flexible tasks when urgent items arise while <strong class="text-blue-700">protecting all Non-Negotiables</strong>.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <select id="simDaySelect" onchange="generateTimeBoxSchedule()" class="px-2.5 py-1.5 text-xs font-semibold bg-blue-50 text-blue-900 border border-blue-200 rounded-lg">
+                  <option value="Monday">Monday</option>
+                  <option value="Tuesday">Tuesday</option>
+                  <option value="Wednesday">Wednesday</option>
+                  <option value="Thursday">Thursday</option>
+                  <option value="Friday">Friday</option>
+                  <option value="Saturday">Saturday</option>
+                </select>
+                <div class="flex items-center gap-1 text-xs">
+                  <span class="text-slate-500">Start:</span>
+                  <input type="time" id="workStartTime" value="08:30" onchange="generateTimeBoxSchedule()" class="px-2 py-1 border border-slate-300 rounded-lg text-xs font-semibold">
+                </div>
+              </div>
+            </div>
+
+            <!-- INSERT URGENT / AD-HOC ACTIVITY BOX -->
+            <form onsubmit="addSuddenTask(event)" class="bg-amber-50/80 border border-amber-200 rounded-xl p-3.5 mb-4">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                  ⚡ Insert Urgent / Unplanned Activity
+                </span>
+                <span class="text-[11px] text-amber-700">Auto-adjusts flexible blocks</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                <input type="text" id="suddenTitle" required placeholder="e.g., Urgent Client Call / Rush Proposal" class="sm:col-span-6 px-3 py-1.5 text-xs bg-white border border-amber-300 rounded-lg">
+                <input type="time" id="suddenTime" value="11:00" required class="sm:col-span-2 px-2 py-1.5 text-xs bg-white border border-amber-300 rounded-lg">
+                <select id="suddenMins" class="sm:col-span-2 px-2 py-1.5 text-xs bg-white border border-amber-300 rounded-lg">
+                  <option value="30">30 mins</option>
+                  <option value="45">45 mins</option>
+                  <option value="60" selected>1 hr</option>
+                  <option value="90">1.5 hrs</option>
+                  <option value="120">2 hrs</option>
+                </select>
+                <button type="submit" class="sm:col-span-2 px-3 py-1.5 rounded-lg bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold">
+                  Insert
+                </button>
+              </div>
+              <div id="activeSuddenContainer" class="mt-2 flex flex-wrap gap-1.5"></div>
+            </form>
+
+            <!-- GENERATED SCHEDULE TIMELINE -->
+            <div id="timeboxAlert" class="hidden mb-3 p-3 rounded-lg bg-blue-50 border border-blue-200 text-xs text-blue-900"></div>
+            <div id="timeboxTimeline" class="space-y-2"></div>
+            
+            <div class="mt-4 pt-3 border-t border-slate-100 flex justify-end">
+              <button onclick="pushTimeboxToDaily()" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm">
+                Apply Schedule to Selected Date's Daily Activities →
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- TAB 3: CLIENT-BASED PIPELINE & PENDING DELIVERABLES       -->
+    <!-- ========================================================= -->
+    <section id="view-clients" class="hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- LEFT: CLIENT FOLLOW-UP, CLOSING & APPOINTMENTS (7 COLS) -->
+        <div class="lg:col-span-7 card p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="text-base sm:text-lg font-bold text-blue-950">Client Pipeline (Follow-Up, Closing & Appointments)</h2>
+              <p class="text-xs text-slate-500">Track client stages, scheduled appointments, and closing action items</p>
+            </div>
+            <span id="clientCountBadge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800">0 Clients</span>
+          </div>
+
+          <!-- Add Client Form -->
+          <form onsubmit="addClientRecord(event)" class="bg-blue-50/60 p-3.5 rounded-xl border border-blue-100 grid grid-cols-1 sm:grid-cols-12 gap-2.5 mb-4">
+            <input type="text" id="clName" required placeholder="Client Full Name" class="sm:col-span-4 px-3 py-2 text-xs bg-white border border-blue-200 rounded-lg">
+            <select id="clStage" class="sm:col-span-3 px-2.5 py-2 text-xs bg-white border border-blue-200 rounded-lg font-semibold text-blue-900">
+              <option value="Appointment Set">📅 Appointment Set</option>
+              <option value="Follow-Up">🔄 For Follow-Up</option>
+              <option value="For Closing">🎯 For Closing</option>
+              <option value="Closed / Won">✅ Closed / Won</option>
+            </select>
+            <input type="date" id="clNextDate" required class="sm:col-span-3 px-2.5 py-2 text-xs bg-white border border-blue-200 rounded-lg">
+            <button type="submit" class="sm:col-span-2 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold">
+              + Add
+            </button>
+            <input type="text" id="clNotes" placeholder="Notes / Plan / Next Action (e.g., Send proposal, Zoom presentation at 3:00 PM)" class="sm:col-span-12 px-3 py-1.5 text-xs bg-white border border-blue-200 rounded-lg">
+          </form>
+
+          <!-- Filter Pills -->
+          <div class="flex flex-wrap gap-1.5 mb-3">
+            <button onclick="filterClients('ALL')" class="cl-filter px-3 py-1 rounded-full text-xs font-semibold bg-blue-600 text-white">All</button>
+            <button onclick="filterClients('Appointment Set')" class="cl-filter px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-blue-50">Appointment Set</button>
+            <button onclick="filterClients('Follow-Up')" class="cl-filter px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-blue-50">Follow-Up</button>
+            <button onclick="filterClients('For Closing')" class="cl-filter px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-blue-50">For Closing</button>
+            <button onclick="filterClients('Closed / Won')" class="cl-filter px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-blue-50">Closed</button>
+          </div>
+
+          <!-- Client Cards List -->
+          <div id="clientListContainer" class="space-y-2.5 max-h-[420px] overflow-y-auto custom-scroll pr-1"></div>
+        </div>
+
+        <!-- RIGHT: PENDING DELIVERABLES (5 COLS) -->
+        <div class="lg:col-span-5 card p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="text-base sm:text-lg font-bold text-blue-950">Pending Deliverables</h2>
+              <p class="text-xs text-slate-500">Proposals, policy servicing, reports & client commitments</p>
+            </div>
+            <span id="delivCountBadge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">0 Pending</span>
+          </div>
+
+          <form onsubmit="addDeliverable(event)" class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2.5 mb-4">
+            <input type="text" id="delivTitle" required placeholder="Deliverable (e.g., Proposal for Dela Cruz)" class="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg">
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Deadline</label>
+                <input type="date" id="delivDue" required class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg">
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Priority</label>
+                <select id="delivPriority" class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg font-semibold">
+                  <option value="High">🔴 High Priority</option>
+                  <option value="Medium" selected>🔵 Medium</option>
+                  <option value="Low">⚪ Low</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="w-full py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold">
+              + Add Deliverable
+            </button>
+          </form>
+
+          <div id="deliverableListContainer" class="space-y-2 max-h-[420px] overflow-y-auto custom-scroll pr-1"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- GOOGLE CALENDAR SYNC MODAL -->
+  <div id="gcalModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-blue-100">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-lg font-bold text-blue-950">Google Calendar Integration</h3>
+        <button onclick="closeGoogleSyncModal()" class="text-slate-400 hover:text-slate-700 font-bold text-lg">&times;</button>
+      </div>
+      <p class="text-xs text-slate-600 mb-4 leading-relaxed">
+        Choose how you would like to synchronize your schedule with Google Calendar:
+      </p>
+
+      <div class="space-y-4">
+        <!-- Option A: Direct Google OAuth Live Sync -->
+        <div class="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200">
+          <div class="text-xs font-bold text-blue-900 mb-1">Option 1: Live Two-Way Sync (Google API Client ID)</div>
+          <p class="text-[11px] text-slate-600 mb-2">Enter your Google Cloud OAuth 2.0 Client ID to directly read and create events on your primary Google Calendar.</p>
+          <input type="text" id="gcalClientIdInput" placeholder="xxxxxxxxxxxx.apps.googleusercontent.com" class="w-full px-3 py-1.5 text-xs bg-white border border-blue-200 rounded-lg mb-2">
+          <button onclick="connectGoogleOAuth()" class="w-full py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold">
+            Connect & Sync Google Account
+          </button>
+        </div>
+
+        <!-- Option B: Instant Quick Add / .ICS -->
+        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+          <div class="text-xs font-bold text-slate-800 mb-1">Option 2: One-Click Event Push & .ICS Export</div>
+          <p class="text-[11px] text-slate-600 mb-2">Even without an API key, every scheduled activity includes a direct <strong>"GCal ↗"</strong> quick-add link and can be exported as a universal <code>.ics</code> calendar file.</p>
+          <button onclick="exportICS(); closeGoogleSyncModal();" class="w-full py-2 rounded-lg bg-white border border-blue-300 text-blue-800 hover:bg-blue-50 text-xs font-semibold">
+            Download Full Calendar (.ICS)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // STATE MANAGEMENT (LOCALSTORAGE)
+    // =========================================================================
+    const STORAGE_KEY = 'workday_command_center_en_v1';
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    let state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
+      selectedDate: todayStr,
+      viewYear: new Date().getFullYear(),
+      viewMonth: new Date().getMonth(),
+      activities: [
+        { id: 1, title: 'Morning Market & Priority Review', date: todayStr, time: '08:30', completed: true },
+        { id: 2, title: 'Client Policy Review & Proposal Presentation', date: todayStr, time: '10:30', completed: false },
+        { id: 3, title: 'Follow-Up Calls (5 Warm Prospects)', date: todayStr, time: '14:00', completed: false }
+      ],
+      routines: [
+        { id: 101, title: 'Morning Huddle & Goal Alignment', mins: 30, day: 'Daily', nonNegotiable: true },
+        { id: 102, title: 'Client Prospecting & Outreach', mins: 90, day: 'Daily', nonNegotiable: true },
+        { id: 103, title: 'Proposal Preparation & Policy Servicing', mins: 60, day: 'Daily', nonNegotiable: false },
+        { id: 104, title: 'Social Media & Personal Branding', mins: 45, day: 'Daily', nonNegotiable: false },
+        { id: 105, title: 'Monthly Portfolio & Production Audit', mins: 120, day: 'Monthly-End', nonNegotiable: true }
+      ],
+      suddenTasks: [],
+      clients: [
+        { id: 201, name: 'Juan Dela Cruz', stage: 'For Closing', nextDate: todayStr, notes: 'Finalizing annual vs. quarterly payment mode' },
+        { id: 202, name: 'Maria Santos', stage: 'Appointment Set', nextDate: todayStr, notes: 'Zoom Financial Needs Analysis at 3:00 PM' }
+      ],
+      deliverables: [
+        { id: 301, title: 'Send Retirement & Education Plan PDF - M. Santos', due: todayStr, priority: 'High', done: false }
+      ],
+      gcalClientId: '',
+      gcalEvents: []
+    };
+
+    let clientFilter = 'ALL';
+    let gcalAccessToken = null;
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    // =========================================================================
+    // INITIALIZATION & NAVIGATION
+    // =========================================================================
+    function init() {
+      const now = new Date();
+      document.getElementById('headerDateDisplay').textContent = now.toLocaleDateString('en-US', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+      });
+
+      document.getElementById('actDate').value = state.selectedDate;
+      document.getElementById('clNextDate').value = todayStr;
+      document.getElementById('delivDue').value = todayStr;
+
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const currentDayName = dayNames[now.getDay()];
+      if (document.querySelector(`#simDaySelect option[value="${currentDayName}"]`)) {
+        document.getElementById('simDaySelect').value = currentDayName;
+      }
+
+      if (state.gcalClientId) {
+        document.getElementById('gcalClientIdInput').value = state.gcalClientId;
+      }
+
+      renderCalendar();
+      renderDailyActivities();
+      renderRoutines();
+      generateTimeBoxSchedule();
+      renderClients();
+      renderDeliverables();
+    }
+
+    function switchTab(tab) {
+      ['daily', 'workday', 'clients'].forEach(t => {
+        document.getElementById(`view-${t}`).classList.add('hidden');
+        const btn = document.getElementById(`tab-${t}`);
+        btn.classList.remove('border-white', 'text-white');
+        btn.classList.add('border-transparent', 'text-blue-200');
+      });
+      document.getElementById(`view-${tab}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`tab-${tab}`);
+      activeBtn.classList.add('border-white', 'text-white');
+      activeBtn.classList.remove('border-transparent', 'text-blue-200');
+    }
+
+    // =========================================================================
+    // 1. CALENDAR & DAILY ACTIVITIES
+    // =========================================================================
+    function renderCalendar() {
+      const grid = document.getElementById('calendarGrid');
+      grid.innerHTML = '';
+
+      const year = state.viewYear;
+      const month = state.viewMonth;
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      document.getElementById('calMonthYear').textContent = new Date(year, month).toLocaleDateString('en-US', {
+        month: 'long', year: 'numeric'
+      });
+
+      for (let i = 0; i < firstDay; i++) {
+        grid.innerHTML += `<div class="h-16 sm:h-20 rounded-lg bg-slate-50/60"></div>`;
+      }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const dayActs = state.activities.filter(a => a.date === dateStr);
+        const dayGcal = state.gcalEvents.filter(e => e.date === dateStr);
+        const isSelected = state.selectedDate === dateStr;
+        const isToday = todayStr === dateStr;
+
+        const completedCount = dayActs.filter(a => a.completed).length;
+        const allDone = dayActs.length > 0 && completedCount === dayActs.length;
+
+        let borderClass = isSelected ? 'border-2 border-blue-600 bg-blue-50/70' : 'border border-slate-200 bg-white hover:border-blue-300';
+        if (allDone && !isSelected) borderClass = 'border border-emerald-300 bg-emerald-50/40';
+
+        let dotsHtml = '';
+        dayActs.slice(0, 2).forEach(a => {
+          dotsHtml += `<div class="truncate text-[10px] px-1 rounded ${a.completed ? 'bg-emerald-100 text-emerald-800 line-through' : 'bg-blue-100 text-blue-800'}">${a.time} ${a.title}</div>`;
+        });
+        if (dayGcal.length > 0) {
+          dotsHtml += `<div class="truncate text-[10px] px-1 rounded bg-indigo-100 text-indigo-800">GCal: ${dayGcal.length} event(s)</div>`;
+        }
+        if (dayActs.length > 2) {
+          dotsHtml += `<div class="text-[9px] text-slate-500 font-semibold">+${dayActs.length - 2} more</div>`;
+        }
+
+        grid.innerHTML += `
+          <button onclick="selectDate('${dateStr}')" class="h-16 sm:h-20 p-1.5 rounded-lg text-left flex flex-col justify-between transition ${borderClass}">
+            <div class="flex items-center justify-between w-full">
+              <span class="text-xs font-bold ${isToday ? 'bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center' : 'text-slate-700'}">${d}</span>
+              ${dayActs.length ? `<span class="text-[10px] font-semibold ${allDone ? 'text-emerald-600' : 'text-blue-600'}">${completedCount}/${dayActs.length}</span>` : ''}
+            </div>
+            <div class="space-y-0.5 w-full overflow-hidden">${dotsHtml}</div>
+          </button>
+        `;
+      }
+    }
+
+    function selectDate(dateStr) {
+      state.selectedDate = dateStr;
+      document.getElementById('actDate').value = dateStr;
+      saveState();
+      renderCalendar();
+      renderDailyActivities();
+    }
+
+    function changeMonth(delta) {
+      state.viewMonth += delta;
+      if (state.viewMonth > 11) { state.viewMonth = 0; state.viewYear++; }
+      if (state.viewMonth < 0) { state.viewMonth = 11; state.viewYear--; }
+      renderCalendar();
+    }
+
+    function goToday() {
+      const now = new Date();
+      state.viewYear = now.getFullYear();
+      state.viewMonth = now.getMonth();
+      selectDate(todayStr);
+    }
+
+    function renderDailyActivities() {
+      const list = document.getElementById('dailyActivityList');
+      const dateObj = new Date(state.selectedDate + 'T00:00:00');
+      document.getElementById('selectedDateLabel').textContent = dateObj.toLocaleDateString('en-US', {
+        weekday: 'long', month: 'short', day: 'numeric', year: 'numeric'
+      });
+
+      const dayActs = state.activities
+        .filter(a => a.date === state.selectedDate)
+        .sort((a, b) => a.time.localeCompare(b.time));
+
+      const doneCount = dayActs.filter(a => a.completed).length;
+      document.getElementById('dailyProgressBadge').textContent = `${doneCount}/${dayActs.length} Done`;
+
+      if (dayActs.length === 0) {
+        list.innerHTML = `<div class="text-center py-8 text-xs text-slate-400 border border-dashed border-slate-200 rounded-xl">No activities scheduled for this date. Add one above to get started.</div>`;
+      } else {
+        list.innerHTML = dayActs.map(act => {
+          const gcalLink = buildGoogleCalendarUrl(act);
+          return `
+            <div class="p-3 rounded-xl border border-slate-200 bg-white flex items-center justify-between gap-2.5 ${act.completed ? 'completed-row' : ''}">
+              <label class="flex items-start gap-2.5 cursor-pointer flex-1">
+                <input type="checkbox" ${act.completed ? 'checked' : ''} onchange="toggleActivity(${act.id})" class="mt-0.5 w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+                <div>
+                  <div class="task-title text-sm font-semibold text-slate-800">${act.title}</div>
+                  <div class="text-[11px] font-medium ${act.completed ? 'text-emerald-700' : 'text-blue-600'}">⏰ ${formatTime12(act.time)}</div>
+                </div>
+              </label>
+              <div class="flex items-center gap-1.5">
+                <a href="${gcalLink}" target="_blank" title="Sync to Google Calendar" class="px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-700 text-[10px] font-semibold">
+                  GCal ↗
+                </a>
+                <button onclick="deleteActivity(${act.id})" class="text-slate-400 hover:text-red-500 text-sm px-1">&times;</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Render Google Calendar imported events if any
+      const gcalBox = document.getElementById('gcalEventsBox');
+      const gcalList = document.getElementById('gcalEventsList');
+      const dayGcal = state.gcalEvents.filter(e => e.date === state.selectedDate);
+      if (dayGcal.length > 0) {
+        gcalBox.classList.remove('hidden');
+        gcalList.innerHTML = dayGcal.map(ev => `
+          <div class="p-2 rounded-lg bg-indigo-50 border border-indigo-100 flex justify-between items-center">
+            <span class="font-semibold text-indigo-950">${ev.title}</span>
+            <span class="text-indigo-700 font-medium">${ev.time}</span>
+          </div>
+        `).join('');
+      } else {
+        gcalBox.classList.add('hidden');
+      }
+    }
+
+    async function addDailyActivity(e) {
+      e.preventDefault();
+      const title = document.getElementById('actTitle').value.trim();
+      const date = document.getElementById('actDate').value;
+      const time = document.getElementById('actTime').value;
+      const pushGcal = document.getElementById('actSyncGcal').checked;
+
+      const newAct = { id: Date.now(), title, date, time, completed: false };
+      state.activities.push(newAct);
+      state.selectedDate = date;
+      saveState();
+
+      document.getElementById('actTitle').value = '';
+      renderCalendar();
+      renderDailyActivities();
+
+      if (pushGcal) {
+        if (gcalAccessToken) {
+          await pushEventToGoogleAPI(newAct);
+        } else {
+          window.open(buildGoogleCalendarUrl(newAct), '_blank');
+        }
+      }
+    }
+
+    function toggleActivity(id) {
+      const item = state.activities.find(a => a.id === id);
+      if (item) {
+        item.completed = !item.completed;
+        saveState();
+        renderCalendar();
+        renderDailyActivities();
+      }
+    }
+
+    function deleteActivity(id) {
+      state.activities = state.activities.filter(a => a.id !== id);
+      saveState();
+      renderCalendar();
+      renderDailyActivities();
+    }
+
+    // =========================================================================
+    // 2. STRUCTURED WORKDAY & SMART TIME-BOXING ENGINE
+    // =========================================================================
+    function addRoutineTemplate(e) {
+      e.preventDefault();
+      const title = document.getElementById('rtTitle').value.trim();
+      const val = parseInt(document.getElementById('rtDurationVal').value, 10);
+      const unit = document.getElementById('rtDurationUnit').value;
+      const mins = unit === 'hrs' ? val * 60 : val;
+      const day = document.getElementById('rtDay').value;
+      const nonNegotiable = document.getElementById('rtNonNego').checked;
+
+      state.routines.push({ id: Date.now(), title, mins, day, nonNegotiable });
+      saveState();
+      document.getElementById('rtTitle').value = '';
+      document.getElementById('rtNonNego').checked = false;
+      renderRoutines();
+      generateTimeBoxSchedule();
+    }
+
+    function deleteRoutine(id) {
+      state.routines = state.routines.filter(r => r.id !== id);
+      saveState();
+      renderRoutines();
+      generateTimeBoxSchedule();
+    }
+
+    function renderRoutines() {
+      const container = document.getElementById('routineMasterList');
+      if (state.routines.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400">No recurring activities added yet.</p>`;
+        return;
+      }
+      container.innerHTML = state.routines.map(r => `
+        <div class="p-2.5 rounded-lg border border-slate-200 bg-white flex items-center justify-between gap-2">
+          <div>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-xs font-bold text-slate-800">${r.title}</span>
+              ${r.nonNegotiable ? `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold non-nego-badge">Non-Negotiable</span>` : `<span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600">Flexible</span>`}
+            </div>
+            <div class="text-[11px] text-slate-500 mt-0.5">⏱ ${formatDuration(r.mins)} • 📅 ${r.day}</div>
+          </div>
+          <button onclick="deleteRoutine(${r.id})" class="text-slate-400 hover:text-red-500 font-bold px-1.5">&times;</button>
+        </div>
+      `).join('');
+    }
+
+    function addSuddenTask(e) {
+      e.preventDefault();
+      const title = document.getElementById('suddenTitle').value.trim();
+      const time = document.getElementById('suddenTime').value;
+      const mins = parseInt(document.getElementById('suddenMins').value, 10);
+
+      state.suddenTasks.push({ id: Date.now(), title, time, mins });
+      saveState();
+      document.getElementById('suddenTitle').value = '';
+      generateTimeBoxSchedule();
+    }
+
+    function removeSuddenTask(id) {
+      state.suddenTasks = state.suddenTasks.filter(s => s.id !== id);
+      saveState();
+      generateTimeBoxSchedule();
+    }
+
+    function generateTimeBoxSchedule() {
+      const selectedDay = document.getElementById('simDaySelect').value;
+      const startTimeStr = document.getElementById('workStartTime').value || '08:30';
+      const workdayEndMins = 18 * 60; // 6:00 PM standard end cap for smart compression
+
+      // Render active sudden tasks pills
+      const suddenContainer = document.getElementById('activeSuddenContainer');
+      suddenContainer.innerHTML = state.suddenTasks.map(s => `
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-200/80 text-amber-950 text-[11px] font-semibold">
+          ⚡ ${formatTime12(s.time)} - ${s.title} (${s.mins}m)
+          <button onclick="removeSuddenTask(${s.id})" class="font-bold hover:text-red-700">&times;</button>
+        </span>
+      `).join('');
+
+      // Filter routines applicable to selected day
+      const applicable = state.routines.filter(r =>
+        r.day === 'Daily' || r.day === selectedDay || r.day.startsWith('Monthly')
+      );
+
+      // Sort: Non-negotiables first, then flexible
+      const nonNegos = applicable.filter(r => r.nonNegotiable);
+      const flexibles = applicable.filter(r => !r.nonNegotiable);
+
+      const startMins = timeToMins(startTimeStr);
+      const totalAvailable = Math.max(120, workdayEndMins - startMins);
+      const suddenTotal = state.suddenTasks.reduce((acc, s) => acc + s.mins, 0);
+      const nonNegoTotal = nonNegos.reduce((acc, n) => acc + n.mins, 0);
+      const flexOriginalTotal = flexibles.reduce((acc, f) => acc + f.mins, 0);
+
+      let remainingForFlex = totalAvailable - suddenTotal - nonNegoTotal;
+      let flexScale = 1;
+      let adjustmentMsg = '';
+
+      if (state.suddenTasks.length > 0 && flexOriginalTotal > 0) {
+        if (remainingForFlex < flexOriginalTotal) {
+          flexScale = Math.max(0.4, remainingForFlex / flexOriginalTotal);
+          adjustmentMsg = `⚡ <strong>Smart Re-Balance Active:</strong> Inserted ${state.suddenTasks.length} urgent activity (${suddenTotal} mins). All <strong>Non-Negotiables remain 100% intact</strong>, while flexible tasks were automatically scaled to ${Math.round(flexScale * 100)}% duration to fit your workday.`;
+        }
+      }
+
+      const alertBox = document.getElementById('timeboxAlert');
+      if (adjustmentMsg) {
+        alertBox.innerHTML = adjustmentMsg;
+        alertBox.classList.remove('hidden');
+      } else {
+        alertBox.classList.add('hidden');
+      }
+
+      // Build ordered queue: Fixed sudden tasks pinned at their time, other tasks slotted around them
+      const fixedBlocks = state.suddenTasks.map(s => ({
+        title: s.title,
+        start: timeToMins(s.time),
+        duration: s.mins,
+        type: 'SUDDEN'
+      })).sort((a, b) => a.start - b.start);
+
+      const queue = [
+        ...nonNegos.map(n => ({ title: n.title, duration: n.mins, type: 'NON-NEGO' })),
+        ...flexibles.map(f => ({
+          title: f.title,
+          duration: Math.max(15, Math.round((f.mins * flexScale) / 5) * 5),
+          originalDuration: f.mins,
+          type: 'FLEXIBLE'
+        }))
+      ];
+
+      let cursor = startMins;
+      const finalSlots = [];
+
+      // Slot tasks cleanly without overlapping fixed sudden tasks
+      for (const task of queue) {
+        let placed = false;
+        while (!placed) {
+          // Insert lunch break automatically around 12:00 PM if cursor hits 12:00-13:00
+          if (cursor >= 12 * 60 && cursor < 13 * 60 && !finalSlots.some(s => s.type === 'BREAK')) {
+            finalSlots.push({ title: 'Lunch & Recharge Break', start: cursor, duration: 60, type: 'BREAK' });
+            cursor += 60;
+            continue;
+          }
+
+          const conflict = fixedBlocks.find(fb =>
+            (cursor < fb.start + fb.duration) && (cursor + task.duration > fb.start)
+          );
+
+          if (conflict) {
+            if (!finalSlots.includes(conflict)) {
+              finalSlots.push(conflict);
+            }
+            cursor = Math.max(cursor, conflict.start + conflict.duration);
+          } else {
+            finalSlots.push({ ...task, start: cursor });
+            cursor += task.duration;
+            placed = true;
+          }
+        }
+      }
+
+      // Add any remaining fixed blocks that were scheduled later in the day
+      fixedBlocks.forEach(fb => {
+        if (!finalSlots.includes(fb)) finalSlots.push(fb);
+      });
+
+      finalSlots.sort((a, b) => a.start - b.start);
+      window.latestGeneratedSlots = finalSlots;
+
+      const timeline = document.getElementById('timeboxTimeline');
+      if (finalSlots.length === 0) {
+        timeline.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">Add monthly recurring activities on the left to generate your structured workday.</p>`;
+        return;
+      }
+
+      timeline.innerHTML = finalSlots.map(slot => {
+        const end = slot.start + slot.duration;
+        let cardStyle = 'bg-white border-slate-200';
+        let badge = `<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600">Flexible</span>`;
+
+        if (slot.type === 'NON-NEGO') {
+          cardStyle = 'bg-blue-50/70 border-blue-300';
+          badge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold non-nego-badge">🔒 Non-Negotiable</span>`;
+        } else if (slot.type === 'SUDDEN') {
+          cardStyle = 'bg-amber-50 border-amber-300';
+          badge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200 text-amber-900">⚡ Urgent Task</span>`;
+        } else if (slot.type === 'BREAK') {
+          cardStyle = 'bg-slate-50 border-dashed border-slate-300';
+          badge = `<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-200 text-slate-700">Break</span>`;
+        }
+
+        const adjustedNote = (slot.originalDuration && slot.originalDuration !== slot.duration)
+          ? `<span class="text-[10px] text-amber-700 ml-1">(Adjusted from ${slot.originalDuration}m)</span>` : '';
+
+        return `
+          <div class="p-3 rounded-xl border ${cardStyle} flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-3">
+              <div class="text-xs font-bold text-blue-900 bg-white px-2.5 py-1.5 rounded-lg border border-blue-100 whitespace-nowrap">
+                ${minsToTime12(slot.start)} – ${minsToTime12(end)}
+              </div>
+              <div>
+                <div class="text-xs sm:text-sm font-bold text-slate-800">${slot.title}</div>
+                <div class="text-[11px] text-slate-500">Duration: ${formatDuration(slot.duration)} ${adjustedNote}</div>
+              </div>
+            </div>
+            ${badge}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function pushTimeboxToDaily() {
+      if (!window.latestGeneratedSlots || window.latestGeneratedSlots.length === 0) return;
+      window.latestGeneratedSlots.forEach((slot, idx) => {
+        if (slot.type === 'BREAK') return;
+        const hh = String(Math.floor(slot.start / 60)).padStart(2, '0');
+        const mm = String(slot.start % 60).padStart(2, '0');
+        state.activities.push({
+          id: Date.now() + idx,
+          title: `[Time-Box] ${slot.title}`,
+          date: state.selectedDate,
+          time: `${hh}:${mm}`,
+          completed: false
+        });
+      });
+      saveState();
+      renderCalendar();
+      renderDailyActivities();
+      switchTab('daily');
+    }
+
+    // =========================================================================
+    // 3. CLIENT PIPELINE & PENDING DELIVERABLES
+    // =========================================================================
+    function addClientRecord(e) {
+      e.preventDefault();
+      state.clients.unshift({
+        id: Date.now(),
+        name: document.getElementById('clName').value.trim(),
+        stage: document.getElementById('clStage').value,
+        nextDate: document.getElementById('clNextDate').value,
+        notes: document.getElementById('clNotes').value.trim()
+      });
+      saveState();
+      document.getElementById('clName').value = '';
+      document.getElementById('clNotes').value = '';
+      renderClients();
+    }
+
+    function updateClientStage(id, newStage) {
+      const c = state.clients.find(x => x.id === id);
+      if (c) { c.stage = newStage; saveState(); renderClients(); }
+    }
+
+    function syncClientToDaily(id) {
+      const c = state.clients.find(x => x.id === id);
+      if (!c) return;
+      state.activities.push({
+        id: Date.now(),
+        title: `Client (${c.stage}): ${c.name} ${c.notes ? '- ' + c.notes : ''}`,
+        date: c.nextDate || state.selectedDate,
+        time: '10:00',
+        completed: false
+      });
+      state.selectedDate = c.nextDate || state.selectedDate;
+      saveState();
+      renderCalendar();
+      renderDailyActivities();
+      switchTab('daily');
+    }
+
+    function deleteClient(id) {
+      state.clients = state.clients.filter(c => c.id !== id);
+      saveState();
+      renderClients();
+    }
+
+    function filterClients(stage) {
+      clientFilter = stage;
+      document.querySelectorAll('.cl-filter').forEach(btn => {
+        if (btn.textContent.trim() === stage || (stage === 'ALL' && btn.textContent.trim() === 'All') || (stage === 'Closed / Won' && btn.textContent.trim() === 'Closed')) {
+          btn.className = 'cl-filter px-3 py-1 rounded-full text-xs font-semibold bg-blue-600 text-white';
+        } else {
+          btn.className = 'cl-filter px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-blue-50';
+        }
+      });
+      renderClients();
+    }
+
+    function renderClients() {
+      const container = document.getElementById('clientListContainer');
+      const filtered = clientFilter === 'ALL' ? state.clients : state.clients.filter(c => c.stage === clientFilter);
+      document.getElementById('clientCountBadge').textContent = `${state.clients.length} Clients`;
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="text-center py-8 text-xs text-slate-400 border border-dashed border-slate-200 rounded-xl">No client records found in this filter.</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(c => {
+        const isClosed = c.stage === 'Closed / Won';
+        return `
+          <div class="p-3.5 rounded-xl border ${isClosed ? 'completed-row' : 'border-slate-200 bg-white'} space-y-2">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <div class="text-sm font-bold text-blue-950">${c.name}</div>
+                <div class="text-[11px] text-slate-500">📅 Target Date: <strong>${c.nextDate}</strong></div>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <select onchange="updateClientStage(${c.id}, this.value)" class="px-2 py-1 text-xs font-semibold rounded-lg border border-blue-200 bg-blue-50 text-blue-900">
+                  <option value="Appointment Set" ${c.stage === 'Appointment Set' ? 'selected' : ''}>📅 Appointment Set</option>
+                  <option value="Follow-Up" ${c.stage === 'Follow-Up' ? 'selected' : ''}>🔄 Follow-Up</option>
+                  <option value="For Closing" ${c.stage === 'For Closing' ? 'selected' : ''}>🎯 For Closing</option>
+                  <option value="Closed / Won" ${c.stage === 'Closed / Won' ? 'selected' : ''}>✅ Closed / Won</option>
+                </select>
+                <button onclick="syncClientToDaily(${c.id})" title="Push to Daily Calendar" class="px-2 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-semibold">
+                  + Calendar
+                </button>
+                <button onclick="deleteClient(${c.id})" class="text-slate-400 hover:text-red-500 px-1 font-bold">&times;</button>
+              </div>
+            </div>
+            ${c.notes ? `<p class="text-xs text-slate-600 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-100">${c.notes}</p>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function addDeliverable(e) {
+      e.preventDefault();
+      state.deliverables.unshift({
+        id: Date.now(),
+        title: document.getElementById('delivTitle').value.trim(),
+        due: document.getElementById('delivDue').value,
+        priority: document.getElementById('delivPriority').value,
+        done: false
+      });
+      saveState();
+      document.getElementById('delivTitle').value = '';
+      renderDeliverables();
+    }
+
+    function toggleDeliverable(id) {
+      const d = state.deliverables.find(x => x.id === id);
+      if (d) { d.done = !d.done; saveState(); renderDeliverables(); }
+    }
+
+    function deleteDeliverable(id) {
+      state.deliverables = state.deliverables.filter(x => x.id !== id);
+      saveState();
+      renderDeliverables();
+    }
+
+    function renderDeliverables() {
+      const container = document.getElementById('deliverableListContainer');
+      const pendingCount = state.deliverables.filter(d => !d.done).length;
+      document.getElementById('delivCountBadge').textContent = `${pendingCount} Pending`;
+
+      if (state.deliverables.length === 0) {
+        container.innerHTML = `<div class="text-center py-8 text-xs text-slate-400 border border-dashed border-slate-200 rounded-xl">No pending deliverables.</div>`;
+        return;
+      }
+
+      container.innerHTML = state.deliverables.map(d => {
+        const prioBadge = d.priority === 'High'
+          ? 'bg-red-100 text-red-700'
+          : d.priority === 'Medium' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600';
+
+        return `
+          <div class="p-3 rounded-xl border border-slate-200 bg-white flex items-center justify-between gap-2 ${d.done ? 'completed-row' : ''}">
+            <label class="flex items-start gap-2.5 cursor-pointer flex-1">
+              <input type="checkbox" ${d.done ? 'checked' : ''} onchange="toggleDeliverable(${d.id})" class="mt-0.5 w-4 h-4 rounded text-emerald-600 cursor-pointer">
+              <div>
+                <div class="task-title text-xs sm:text-sm font-semibold text-slate-800">${d.title}</div>
+                <div class="flex items-center gap-2 mt-1">
+                  <span class="text-[11px] text-slate-500">Due: <strong>${d.due}</strong></span>
+                  <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${prioBadge}">${d.priority}</span>
+                </div>
+              </div>
+            </label>
+            <button onclick="deleteDeliverable(${d.id})" class="text-slate-400 hover:text-red-500 font-bold px-1">&times;</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // =========================================================================
+    // GOOGLE CALENDAR SYNC & .ICS EXPORT HELPERS
+    // =========================================================================
+    function openGoogleSyncModal() {
+      document.getElementById('gcalModal').classList.remove('hidden');
+      document.getElementById('gcalModal').classList.add('flex');
+    }
+
+    function closeGoogleSyncModal() {
+      document.getElementById('gcalModal').classList.add('hidden');
+      document.getElementById('gcalModal').classList.remove('flex');
+    }
+
+    function buildGoogleCalendarUrl(act) {
+      const cleanDate = act.date.replace(/-/g, '');
+      const [hh, mm] = act.time.split(':');
+      const startStr = `${cleanDate}T${hh}${mm}00`;
+      const endHour = String((parseInt(hh, 10) + 1) % 24).padStart(2, '0');
+      const endStr = `${cleanDate}T${endHour}${mm}00`;
+      const text = encodeURIComponent(act.title);
+      return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${startStr}/${endStr}`;
+    }
+
+    function connectGoogleOAuth() {
+      const clientId = document.getElementById('gcalClientIdInput').value.trim();
+      if (!clientId) {
+        alert('Please enter your Google OAuth 2.0 Client ID first.');
+        return;
+      }
+      state.gcalClientId = clientId;
+      saveState();
+
+      if (typeof google === 'undefined' || !google.accounts) {
+        alert('Google Identity Services script is still loading. Please try again in a moment.');
+        return;
+      }
+
+      const tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: 'https://www.googleapis.com/auth/calendar.events',
+        callback: async (resp) => {
+          if (resp.access_token) {
+            gcalAccessToken = resp.access_token;
+            document.getElementById('gcalStatusText').textContent = 'Google Calendar Connected ✓';
+            closeGoogleSyncModal();
+            await fetchGoogleCalendarEvents();
+          }
+        }
+      });
+      tokenClient.requestAccessToken({ prompt: 'consent' });
+    }
+
+    async function fetchGoogleCalendarEvents() {
+      if (!gcalAccessToken) return;
+      const timeMin = new Date(state.viewYear, state.viewMonth, 1).toISOString();
+      const timeMax = new Date(state.viewYear, state.viewMonth + 1, 0, 23, 59, 59).toISOString();
+      const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&orderBy=startTime`;
+
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${gcalAccessToken}` } });
+      const data = await res.json();
+      if (data.items) {
+        state.gcalEvents = data.items.map(ev => {
+          const start = ev.start.dateTime || ev.start.date;
+          const datePart = start.split('T')[0];
+          const timePart = start.includes('T') ? start.split('T')[1].slice(0, 5) : 'All Day';
+          return { title: ev.summary || '(No Title)', date: datePart, time: timePart };
+        });
+        saveState();
+        renderCalendar();
+        renderDailyActivities();
+      }
+    }
+
+    async function pushEventToGoogleAPI(act) {
+      if (!gcalAccessToken) return;
+      const startIso = `${act.date}T${act.time}:00+08:00`;
+      const endMins = timeToMins(act.time) + 60;
+      const endHh = String(Math.floor(endMins / 60) % 24).padStart(2, '0');
+      const endMm = String(endMins % 60).padStart(2, '0');
+      const endIso = `${act.date}T${endHh}:${endMm}:00+08:00`;
+
+      await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${gcalAccessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          summary: act.title,
+          start: { dateTime: startIso, timeZone: 'Asia/Manila' },
+          end: { dateTime: endIso, timeZone: 'Asia/Manila' }
+        })
+      });
+      await fetchGoogleCalendarEvents();
+    }
+
+    function exportICS() {
+      let ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Workday Command Center//EN'];
+      state.activities.forEach(a => {
+        const dt = a.date.replace(/-/g, '') + 'T' + a.time.replace(':', '') + '00';
+        ics.push('BEGIN:VEVENT', `UID:${a.id}@workdaycommand`, `DTSTAMP:${dt}`, `DTSTART:${dt}`, `SUMMARY:${a.title}`, 'END:VEVENT');
+      });
+      ics.push('END:VCALENDAR');
+
+      const blob = new Blob([ics.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'workday-schedule.ics';
+      link.click();
+    }
+
+    // =========================================================================
+    // TIME UTILITIES
+    // =========================================================================
+    function timeToMins(t) {
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + m;
+    }
+
+    function minsToTime12(total) {
+      const h24 = Math.floor(total / 60) % 24;
+      const m = total % 60;
+      const ampm = h24 >= 12 ? 'PM' : 'AM';
+      const h12 = h24 % 12 || 12;
+      return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+    }
+
+    function formatTime12(t) {
+      return minsToTime12(timeToMins(t));
+    }
+
+    function formatDuration(mins) {
+      if (mins < 60) return `${mins} mins`;
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      return m ? `${h} hr ${m} mins` : `${h} hr${h > 1 ? 's' : ''}`;
+    }
+
+    init();
+  </script>
+</body>
+</html>
