@@ -174,7 +174,7 @@
                 </div>
                 <div>
                   <label class="block text-xs font-semibold text-slate-700 mb-1">Usual Day</label>
-                  <select id="rtDay" onchange="toggleScheduledDateInput()" class="w-full px-2.5 py-1.5 text-sm bg-white border border-slate-300 rounded-lg">
+                  <select id="rtDay" class="w-full px-2.5 py-1.5 text-sm bg-white border border-slate-300 rounded-lg">
                     <option value="Monday">Monday</option>
                     <option value="Tuesday">Tuesday</option>
                     <option value="Wednesday">Wednesday</option>
@@ -185,11 +185,6 @@
                     <option value="Scheduled">Scheduled</option>
                   </select>
                 </div>
-              </div>
-
-              <div id="rtScheduledDateWrapper" class="hidden">
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Scheduled Date</label>
-                <input type="date" id="rtScheduledDate" class="w-full px-2.5 py-1.5 text-sm bg-white border border-slate-300 rounded-lg">
               </div>
 
               <div class="flex items-center justify-between pt-1">
@@ -425,7 +420,7 @@
         { id: 102, title: 'Client Prospecting & Outreach', mins: 90, day: 'Tuesday', nonNegotiable: true, selected: true },
         { id: 103, title: 'Proposal Preparation & Policy Servicing', mins: 60, day: 'Wednesday', nonNegotiable: false, selected: true },
         { id: 104, title: 'Social Media & Personal Branding', mins: 45, day: 'Thursday', nonNegotiable: false, selected: false },
-        { id: 105, title: 'Monthly Portfolio & Production Audit', mins: 120, day: 'Scheduled', scheduledDate: todayStr, nonNegotiable: true, selected: true }
+        { id: 105, title: 'Monthly Portfolio & Production Audit', mins: 120, day: 'Scheduled', nonNegotiable: true, selected: true }
       ],
       suddenTasks: [],
       clients: [
@@ -459,7 +454,6 @@
       document.getElementById('timeboxTargetDate').value = state.selectedDate;
       document.getElementById('clNextDate').value = todayStr;
       document.getElementById('delivDue').value = todayStr;
-      document.getElementById('rtScheduledDate').value = todayStr;
 
       if (state.gcalClientId) {
         document.getElementById('gcalClientIdInput').value = state.gcalClientId;
@@ -674,16 +668,6 @@
     // =========================================================================
     // 2. STRUCTURED WORKDAY & SMART TIME-BOXING ENGINE
     // =========================================================================
-    function toggleScheduledDateInput() {
-      const dayVal = document.getElementById('rtDay').value;
-      const wrapper = document.getElementById('rtScheduledDateWrapper');
-      if (dayVal === 'Scheduled') {
-        wrapper.classList.remove('hidden');
-      } else {
-        wrapper.classList.add('hidden');
-      }
-    }
-
     function addRoutineTemplate(e) {
       e.preventDefault();
       const title = document.getElementById('rtTitle').value.trim();
@@ -691,7 +675,6 @@
       const unit = document.getElementById('rtDurationUnit').value;
       const mins = unit === 'hrs' ? val * 60 : val;
       const day = document.getElementById('rtDay').value;
-      const scheduledDate = day === 'Scheduled' ? (document.getElementById('rtScheduledDate').value || state.selectedDate) : '';
       const nonNegotiable = document.getElementById('rtNonNego').checked;
 
       state.routines.push({
@@ -699,7 +682,6 @@
         title,
         mins,
         day,
-        scheduledDate,
         nonNegotiable,
         selected: nonNegotiable ? true : false
       });
@@ -741,7 +723,7 @@
         nonNegoContainer.innerHTML = `<p class="text-xs text-slate-400 italic">No non-negotiable activities yet.</p>`;
       } else {
         nonNegoContainer.innerHTML = nonNegoItems.map(r => {
-          const dayLabel = r.day === 'Scheduled' && r.scheduledDate ? `Scheduled (${r.scheduledDate})` : r.day;
+          const dayLabel = r.day;
           return `
             <div class="p-2.5 rounded-lg border border-blue-200 bg-blue-50/40 flex items-center justify-between gap-2">
               <div>
@@ -761,7 +743,7 @@
         negoContainer.innerHTML = `<p class="text-xs text-slate-400 italic">No negotiable activities yet.</p>`;
       } else {
         negoContainer.innerHTML = negoItems.map(r => {
-          const dayLabel = r.day === 'Scheduled' && r.scheduledDate ? `Scheduled (${r.scheduledDate})` : r.day;
+          const dayLabel = r.day;
           const isSelected = !!r.selected;
           return `
             <div class="p-2.5 rounded-lg border ${isSelected ? 'border-emerald-300 bg-emerald-50/40' : 'border-slate-200 bg-white'} flex items-center justify-between gap-2 transition">
@@ -837,7 +819,7 @@
 
       // Helper to check if a routine matches the selected date (either by weekday or matching Scheduled date)
       const matchesSelectedDate = (r) =>
-        r.day === selectedDay || (r.day === 'Scheduled' && (!r.scheduledDate || r.scheduledDate === targetDateStr));
+        r.day === selectedDay || r.day === 'Scheduled';
 
       // Non-negotiables matching selected date are AUTOMATICALLY included
       const nonNegos = state.routines.filter(r => r.nonNegotiable && matchesSelectedDate(r));
