@@ -149,11 +149,11 @@
     <section id="view-workday" class="hidden space-y-6">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <!-- LEFT: MONTHLY ROUTINE & NON-NEGOTIABLES SETUP (5 COLS) -->
+        <!-- LEFT: NON-NEGOTIABLE & NEGOTIABLE ACTIVITIES SETUP (5 COLS) -->
         <div class="lg:col-span-5 space-y-5">
           <div class="card p-5">
-            <h2 class="text-base sm:text-lg font-bold text-blue-950 mb-1">Monthly Recurring Activities</h2>
-            <p class="text-xs text-slate-500 mb-4">Define your monthly activities, expected duration, usual schedule day, and priority lock status.</p>
+            <h2 class="text-base sm:text-lg font-bold text-blue-950 mb-1">Workday Activities Library</h2>
+            <p class="text-xs text-slate-500 mb-4">Add activities as <strong>Non-Negotiable</strong> (auto-included) or <strong>Negotiable</strong> (select which ones to include).</p>
 
             <form onsubmit="addRoutineTemplate(event)" class="space-y-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
               <div>
@@ -174,18 +174,22 @@
                 </div>
                 <div>
                   <label class="block text-xs font-semibold text-slate-700 mb-1">Usual Day</label>
-                  <select id="rtDay" class="w-full px-2.5 py-1.5 text-sm bg-white border border-slate-300 rounded-lg">
-                    <option value="Daily">Daily (Mon-Fri)</option>
+                  <select id="rtDay" onchange="toggleScheduledDateInput()" class="w-full px-2.5 py-1.5 text-sm bg-white border border-slate-300 rounded-lg">
                     <option value="Monday">Monday</option>
                     <option value="Tuesday">Tuesday</option>
                     <option value="Wednesday">Wednesday</option>
                     <option value="Thursday">Thursday</option>
                     <option value="Friday">Friday</option>
                     <option value="Saturday">Saturday</option>
-                    <option value="Monthly-1st">First Week of Month</option>
-                    <option value="Monthly-End">Month-End Closing</option>
+                    <option value="Sunday">Sunday</option>
+                    <option value="Scheduled">Scheduled</option>
                   </select>
                 </div>
+              </div>
+
+              <div id="rtScheduledDateWrapper" class="hidden">
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Scheduled Date</label>
+                <input type="date" id="rtScheduledDate" class="w-full px-2.5 py-1.5 text-sm bg-white border border-slate-300 rounded-lg">
               </div>
 
               <div class="flex items-center justify-between pt-1">
@@ -199,10 +203,27 @@
               </div>
             </form>
 
-            <!-- Saved Monthly Routines List -->
-            <div class="mt-4">
-              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Monthly Activity Master List</h3>
-              <div id="routineMasterList" class="space-y-2 max-h-[300px] overflow-y-auto custom-scroll pr-1"></div>
+            <!-- PORTION 1: NON-NEGOTIABLE ACTIVITIES -->
+            <div class="mt-5">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-blue-800 flex items-center gap-1.5">
+                  🔒 Non-Negotiable Activities
+                </h3>
+                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">Auto-Included</span>
+              </div>
+              <div id="nonNegoMasterList" class="space-y-2 max-h-[210px] overflow-y-auto custom-scroll pr-1"></div>
+            </div>
+
+            <!-- PORTION 2: NEGOTIABLE ACTIVITIES (WITH SELECT BUTTON EACH) -->
+            <div class="mt-5 pt-4 border-t border-slate-200">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                  ⚖️ Negotiable Activities
+                </h3>
+                <span id="selectedNegoBadge" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">0 Selected</span>
+              </div>
+              <p class="text-[11px] text-slate-500 mb-2">Click <strong>Select</strong> on any negotiable activity you want included in the suggested workday.</p>
+              <div id="negoMasterList" class="space-y-2 max-h-[240px] overflow-y-auto custom-scroll pr-1"></div>
             </div>
           </div>
         </div>
@@ -213,21 +234,17 @@
             <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
               <div>
                 <h2 class="text-base sm:text-lg font-bold text-blue-950">Suggested Time-Boxed Workday</h2>
-                <p class="text-xs text-slate-500">Automatically re-balances flexible tasks when urgent items arise while <strong class="text-blue-700">protecting all Non-Negotiables</strong>.</p>
+                <p class="text-xs text-slate-500">Target Date: <strong id="timeboxSelectedDateDisplay" class="text-blue-700">Selected Date</strong> • Includes all Non-Negotiables + your selected Negotiables.</p>
               </div>
-              <div class="flex items-center gap-2">
-                <select id="simDaySelect" onchange="generateTimeBoxSchedule()" class="px-2.5 py-1.5 text-xs font-semibold bg-blue-50 text-blue-900 border border-blue-200 rounded-lg">
-                  <option value="Monday">Monday</option>
-                  <option value="Tuesday">Tuesday</option>
-                  <option value="Wednesday">Wednesday</option>
-                  <option value="Thursday">Thursday</option>
-                  <option value="Friday">Friday</option>
-                  <option value="Saturday">Saturday</option>
-                </select>
+              <div class="flex flex-wrap items-center gap-2">
+                <input type="date" id="timeboxTargetDate" onchange="onTimeboxDateChange(this.value)" class="px-2.5 py-1.5 text-xs font-semibold bg-blue-50 text-blue-900 border border-blue-200 rounded-lg">
                 <div class="flex items-center gap-1 text-xs">
                   <span class="text-slate-500">Start:</span>
-                  <input type="time" id="workStartTime" value="08:30" onchange="generateTimeBoxSchedule()" class="px-2 py-1 border border-slate-300 rounded-lg text-xs font-semibold">
+                  <input type="time" id="workStartTime" value="08:30" class="px-2 py-1 border border-slate-300 rounded-lg text-xs font-semibold">
                 </div>
+                <button type="button" onclick="viewSuggestedForSelectedDate()" class="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                  ⚡ View Suggested Lineup
+                </button>
               </div>
             </div>
 
@@ -404,11 +421,11 @@
         { id: 3, title: 'Follow-Up Calls (5 Warm Prospects)', date: todayStr, time: '14:00', completed: false }
       ],
       routines: [
-        { id: 101, title: 'Morning Huddle & Goal Alignment', mins: 30, day: 'Daily', nonNegotiable: true },
-        { id: 102, title: 'Client Prospecting & Outreach', mins: 90, day: 'Daily', nonNegotiable: true },
-        { id: 103, title: 'Proposal Preparation & Policy Servicing', mins: 60, day: 'Daily', nonNegotiable: false },
-        { id: 104, title: 'Social Media & Personal Branding', mins: 45, day: 'Daily', nonNegotiable: false },
-        { id: 105, title: 'Monthly Portfolio & Production Audit', mins: 120, day: 'Monthly-End', nonNegotiable: true }
+        { id: 101, title: 'Morning Huddle & Goal Alignment', mins: 30, day: 'Monday', nonNegotiable: true, selected: true },
+        { id: 102, title: 'Client Prospecting & Outreach', mins: 90, day: 'Tuesday', nonNegotiable: true, selected: true },
+        { id: 103, title: 'Proposal Preparation & Policy Servicing', mins: 60, day: 'Wednesday', nonNegotiable: false, selected: true },
+        { id: 104, title: 'Social Media & Personal Branding', mins: 45, day: 'Thursday', nonNegotiable: false, selected: false },
+        { id: 105, title: 'Monthly Portfolio & Production Audit', mins: 120, day: 'Scheduled', scheduledDate: todayStr, nonNegotiable: true, selected: true }
       ],
       suddenTasks: [],
       clients: [
@@ -439,14 +456,10 @@
       });
 
       document.getElementById('actDate').value = state.selectedDate;
+      document.getElementById('timeboxTargetDate').value = state.selectedDate;
       document.getElementById('clNextDate').value = todayStr;
       document.getElementById('delivDue').value = todayStr;
-
-      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      const currentDayName = dayNames[now.getDay()];
-      if (document.querySelector(`#simDaySelect option[value="${currentDayName}"]`)) {
-        document.getElementById('simDaySelect').value = currentDayName;
-      }
+      document.getElementById('rtScheduledDate').value = todayStr;
 
       if (state.gcalClientId) {
         document.getElementById('gcalClientIdInput').value = state.gcalClientId;
@@ -532,9 +545,18 @@
     function selectDate(dateStr) {
       state.selectedDate = dateStr;
       document.getElementById('actDate').value = dateStr;
+      if (document.getElementById('timeboxTargetDate')) {
+        document.getElementById('timeboxTargetDate').value = dateStr;
+      }
       saveState();
       renderCalendar();
       renderDailyActivities();
+      generateTimeBoxSchedule();
+    }
+
+    function onTimeboxDateChange(dateStr) {
+      if (!dateStr) return;
+      selectDate(dateStr);
     }
 
     function changeMonth(delta) {
@@ -652,6 +674,16 @@
     // =========================================================================
     // 2. STRUCTURED WORKDAY & SMART TIME-BOXING ENGINE
     // =========================================================================
+    function toggleScheduledDateInput() {
+      const dayVal = document.getElementById('rtDay').value;
+      const wrapper = document.getElementById('rtScheduledDateWrapper');
+      if (dayVal === 'Scheduled') {
+        wrapper.classList.remove('hidden');
+      } else {
+        wrapper.classList.add('hidden');
+      }
+    }
+
     function addRoutineTemplate(e) {
       e.preventDefault();
       const title = document.getElementById('rtTitle').value.trim();
@@ -659,14 +691,33 @@
       const unit = document.getElementById('rtDurationUnit').value;
       const mins = unit === 'hrs' ? val * 60 : val;
       const day = document.getElementById('rtDay').value;
+      const scheduledDate = day === 'Scheduled' ? (document.getElementById('rtScheduledDate').value || state.selectedDate) : '';
       const nonNegotiable = document.getElementById('rtNonNego').checked;
 
-      state.routines.push({ id: Date.now(), title, mins, day, nonNegotiable });
+      state.routines.push({
+        id: Date.now(),
+        title,
+        mins,
+        day,
+        scheduledDate,
+        nonNegotiable,
+        selected: nonNegotiable ? true : false
+      });
       saveState();
       document.getElementById('rtTitle').value = '';
       document.getElementById('rtNonNego').checked = false;
       renderRoutines();
       generateTimeBoxSchedule();
+    }
+
+    function toggleNegotiableSelection(id) {
+      const item = state.routines.find(r => r.id === id);
+      if (item && !item.nonNegotiable) {
+        item.selected = !item.selected;
+        saveState();
+        renderRoutines();
+        generateTimeBoxSchedule();
+      }
     }
 
     function deleteRoutine(id) {
@@ -677,23 +728,59 @@
     }
 
     function renderRoutines() {
-      const container = document.getElementById('routineMasterList');
-      if (state.routines.length === 0) {
-        container.innerHTML = `<p class="text-xs text-slate-400">No recurring activities added yet.</p>`;
-        return;
-      }
-      container.innerHTML = state.routines.map(r => `
-        <div class="p-2.5 rounded-lg border border-slate-200 bg-white flex items-center justify-between gap-2">
-          <div>
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <span class="text-xs font-bold text-slate-800">${r.title}</span>
-              ${r.nonNegotiable ? `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold non-nego-badge">Non-Negotiable</span>` : `<span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600">Flexible</span>`}
+      const nonNegoContainer = document.getElementById('nonNegoMasterList');
+      const negoContainer = document.getElementById('negoMasterList');
+
+      const nonNegoItems = state.routines.filter(r => r.nonNegotiable);
+      const negoItems = state.routines.filter(r => !r.nonNegotiable);
+
+      const selectedNegoCount = negoItems.filter(r => r.selected).length;
+      document.getElementById('selectedNegoBadge').textContent = `${selectedNegoCount} Selected`;
+
+      if (nonNegoItems.length === 0) {
+        nonNegoContainer.innerHTML = `<p class="text-xs text-slate-400 italic">No non-negotiable activities yet.</p>`;
+      } else {
+        nonNegoContainer.innerHTML = nonNegoItems.map(r => {
+          const dayLabel = r.day === 'Scheduled' && r.scheduledDate ? `Scheduled (${r.scheduledDate})` : r.day;
+          return `
+            <div class="p-2.5 rounded-lg border border-blue-200 bg-blue-50/40 flex items-center justify-between gap-2">
+              <div>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="text-xs font-bold text-blue-950">${r.title}</span>
+                  <span class="px-1.5 py-0.5 rounded text-[10px] font-bold non-nego-badge">Auto-Included</span>
+                </div>
+                <div class="text-[11px] text-slate-600 mt-0.5">⏱ ${formatDuration(r.mins)} • 📅 ${dayLabel}</div>
+              </div>
+              <button onclick="deleteRoutine(${r.id})" title="Delete" class="text-slate-400 hover:text-red-500 font-bold px-1.5">&times;</button>
             </div>
-            <div class="text-[11px] text-slate-500 mt-0.5">⏱ ${formatDuration(r.mins)} • 📅 ${r.day}</div>
-          </div>
-          <button onclick="deleteRoutine(${r.id})" class="text-slate-400 hover:text-red-500 font-bold px-1.5">&times;</button>
-        </div>
-      `).join('');
+          `;
+        }).join('');
+      }
+
+      if (negoItems.length === 0) {
+        negoContainer.innerHTML = `<p class="text-xs text-slate-400 italic">No negotiable activities yet.</p>`;
+      } else {
+        negoContainer.innerHTML = negoItems.map(r => {
+          const dayLabel = r.day === 'Scheduled' && r.scheduledDate ? `Scheduled (${r.scheduledDate})` : r.day;
+          const isSelected = !!r.selected;
+          return `
+            <div class="p-2.5 rounded-lg border ${isSelected ? 'border-emerald-300 bg-emerald-50/40' : 'border-slate-200 bg-white'} flex items-center justify-between gap-2 transition">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="text-xs font-bold text-slate-800">${r.title}</span>
+                </div>
+                <div class="text-[11px] text-slate-500 mt-0.5">⏱ ${formatDuration(r.mins)} • 📅 ${dayLabel}</div>
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button type="button" onclick="toggleNegotiableSelection(${r.id})" class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${isSelected ? 'bg-emerald-600 text-white shadow-xs hover:bg-emerald-700' : 'bg-slate-100 text-slate-700 hover:bg-blue-100 hover:text-blue-800 border border-slate-300'}">
+                  ${isSelected ? '✓ Selected' : '+ Select'}
+                </button>
+                <button onclick="deleteRoutine(${r.id})" title="Delete" class="text-slate-400 hover:text-red-500 font-bold px-1">&times;</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
     }
 
     function addSuddenTask(e) {
@@ -714,8 +801,28 @@
       generateTimeBoxSchedule();
     }
 
+    function viewSuggestedForSelectedDate() {
+      generateTimeBoxSchedule();
+      const timeline = document.getElementById('timeboxTimeline');
+      timeline.classList.add('ring-2', 'ring-blue-400', 'rounded-xl', 'p-1');
+      setTimeout(() => {
+        timeline.classList.remove('ring-2', 'ring-blue-400', 'rounded-xl', 'p-1');
+      }, 650);
+    }
+
     function generateTimeBoxSchedule() {
-      const selectedDay = document.getElementById('simDaySelect').value;
+      const targetDateStr = state.selectedDate || todayStr;
+      const targetDateObj = new Date(targetDateStr + 'T00:00:00');
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const selectedDay = dayNames[targetDateObj.getDay()];
+
+      const displayEl = document.getElementById('timeboxSelectedDateDisplay');
+      if (displayEl) {
+        displayEl.textContent = targetDateObj.toLocaleDateString('en-US', {
+          weekday: 'long', month: 'short', day: 'numeric', year: 'numeric'
+        });
+      }
+
       const startTimeStr = document.getElementById('workStartTime').value || '08:30';
       const workdayEndMins = 18 * 60; // 6:00 PM standard end cap for smart compression
 
@@ -728,14 +835,15 @@
         </span>
       `).join('');
 
-      // Filter routines applicable to selected day
-      const applicable = state.routines.filter(r =>
-        r.day === 'Daily' || r.day === selectedDay || r.day.startsWith('Monthly')
-      );
+      // Helper to check if a routine matches the selected date (either by weekday or matching Scheduled date)
+      const matchesSelectedDate = (r) =>
+        r.day === selectedDay || (r.day === 'Scheduled' && (!r.scheduledDate || r.scheduledDate === targetDateStr));
 
-      // Sort: Non-negotiables first, then flexible
-      const nonNegos = applicable.filter(r => r.nonNegotiable);
-      const flexibles = applicable.filter(r => !r.nonNegotiable);
+      // Non-negotiables matching selected date are AUTOMATICALLY included
+      const nonNegos = state.routines.filter(r => r.nonNegotiable && matchesSelectedDate(r));
+
+      // Negotiables are included ONLY when user selected them (and matching selected date, or any selected negotiable if scheduled/matching day)
+      const flexibles = state.routines.filter(r => !r.nonNegotiable && r.selected && matchesSelectedDate(r));
 
       const startMins = timeToMins(startTimeStr);
       const totalAvailable = Math.max(120, workdayEndMins - startMins);
@@ -828,7 +936,7 @@
       timeline.innerHTML = finalSlots.map(slot => {
         const end = slot.start + slot.duration;
         let cardStyle = 'bg-white border-slate-200';
-        let badge = `<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600">Flexible</span>`;
+        let badge = `<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800">✓ Selected Negotiable</span>`;
 
         if (slot.type === 'NON-NEGO') {
           cardStyle = 'bg-blue-50/70 border-blue-300';
