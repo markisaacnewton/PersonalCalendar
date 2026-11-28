@@ -161,29 +161,87 @@
                 <input type="text" id="rtTitle" required placeholder="e.g., Client Prospecting / Policy Review" class="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg">
               </div>
 
-              <div class="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">Expected Duration</label>
-                  <div class="flex gap-1">
-                    <input type="number" id="rtDurationVal" min="5" step="5" value="60" required class="w-full px-2.5 py-1.5 text-sm bg-white border border-slate-300 rounded-lg">
-                    <select id="rtDurationUnit" class="px-2 py-1.5 text-xs bg-white border border-slate-300 rounded-lg font-medium">
-                      <option value="mins">mins</option>
-                      <option value="hrs">hrs</option>
-                    </select>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Time Allocation Mode</label>
+                <div class="grid grid-cols-2 gap-1.5 bg-slate-200/70 p-1 rounded-lg">
+                  <button type="button" id="modeBtnDuration" onclick="setScheduleMode('duration')" class="py-1.5 px-2 rounded-md text-xs font-bold bg-white text-blue-900 shadow-xs transition">
+                    ⏱ Expected Duration
+                  </button>
+                  <button type="button" id="modeBtnFixed" onclick="setScheduleMode('fixed')" class="py-1.5 px-2 rounded-md text-xs font-semibold text-slate-600 hover:text-slate-900 transition">
+                    🕒 Fixed Time Slot
+                  </button>
+                </div>
+                <input type="hidden" id="rtScheduleMode" value="duration">
+              </div>
+
+              <!-- Duration Input Block -->
+              <div id="rtDurationBlock">
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Expected Duration</label>
+                <div class="flex gap-1.5">
+                  <input type="number" id="rtDurationVal" min="5" step="5" value="60" class="w-full px-2.5 py-1.5 text-sm bg-white border border-slate-300 rounded-lg">
+                  <select id="rtDurationUnit" class="px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg font-medium">
+                    <option value="mins">mins</option>
+                    <option value="hrs">hrs</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Fixed Time Range Input Block -->
+              <div id="rtFixedTimeBlock" class="hidden">
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Fixed Time Range (e.g. 5:00 PM to 6:00 PM)</label>
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <span class="block text-[10px] text-slate-500 mb-0.5">Start Time</span>
+                    <input type="time" id="rtStartTime" value="17:00" class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg font-semibold">
+                  </div>
+                  <div>
+                    <span class="block text-[10px] text-slate-500 mb-0.5">End Time</span>
+                    <input type="time" id="rtEndTime" value="18:00" class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg font-semibold">
                   </div>
                 </div>
-                <div>
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">Usual Day</label>
-                  <select id="rtDay" class="w-full px-2.5 py-1.5 text-sm bg-white border border-slate-300 rounded-lg">
-                    <option value="Monday">Monday</option>
-                    <option value="Tuesday">Tuesday</option>
-                    <option value="Wednesday">Wednesday</option>
-                    <option value="Thursday">Thursday</option>
-                    <option value="Friday">Friday</option>
-                    <option value="Saturday">Saturday</option>
-                    <option value="Sunday">Sunday</option>
-                    <option value="Scheduled">Scheduled</option>
-                  </select>
+              </div>
+
+              <!-- Usual Days (Multi-select Monday to Sunday) -->
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="block text-xs font-semibold text-slate-700">Usual Day(s)</label>
+                  <div class="flex gap-1.5 text-[10px]">
+                    <button type="button" onclick="selectPresetDays('weekdays')" class="text-blue-700 hover:underline font-semibold">Mon–Fri</button>
+                    <span class="text-slate-300">|</span>
+                    <button type="button" onclick="selectPresetDays('all')" class="text-blue-700 hover:underline font-semibold">All Days</button>
+                    <span class="text-slate-300">|</span>
+                    <button type="button" onclick="selectPresetDays('clear')" class="text-slate-500 hover:underline">Clear</button>
+                  </div>
+                </div>
+                <div id="rtDaysGroup" class="grid grid-cols-7 gap-1">
+                  <label class="cursor-pointer">
+                    <input type="checkbox" name="rtDays" value="Monday" checked class="peer sr-only">
+                    <div class="text-center py-1.5 rounded-lg border border-slate-300 bg-white text-[11px] font-bold text-slate-600 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 transition">Mon</div>
+                  </label>
+                  <label class="cursor-pointer">
+                    <input type="checkbox" name="rtDays" value="Tuesday" class="peer sr-only">
+                    <div class="text-center py-1.5 rounded-lg border border-slate-300 bg-white text-[11px] font-bold text-slate-600 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 transition">Tue</div>
+                  </label>
+                  <label class="cursor-pointer">
+                    <input type="checkbox" name="rtDays" value="Wednesday" class="peer sr-only">
+                    <div class="text-center py-1.5 rounded-lg border border-slate-300 bg-white text-[11px] font-bold text-slate-600 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 transition">Wed</div>
+                  </label>
+                  <label class="cursor-pointer">
+                    <input type="checkbox" name="rtDays" value="Thursday" class="peer sr-only">
+                    <div class="text-center py-1.5 rounded-lg border border-slate-300 bg-white text-[11px] font-bold text-slate-600 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 transition">Thu</div>
+                  </label>
+                  <label class="cursor-pointer">
+                    <input type="checkbox" name="rtDays" value="Friday" class="peer sr-only">
+                    <div class="text-center py-1.5 rounded-lg border border-slate-300 bg-white text-[11px] font-bold text-slate-600 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 transition">Fri</div>
+                  </label>
+                  <label class="cursor-pointer">
+                    <input type="checkbox" name="rtDays" value="Saturday" class="peer sr-only">
+                    <div class="text-center py-1.5 rounded-lg border border-slate-300 bg-white text-[11px] font-bold text-slate-600 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 transition">Sat</div>
+                  </label>
+                  <label class="cursor-pointer">
+                    <input type="checkbox" name="rtDays" value="Sunday" class="peer sr-only">
+                    <div class="text-center py-1.5 rounded-lg border border-slate-300 bg-white text-[11px] font-bold text-slate-600 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 transition">Sun</div>
+                  </label>
                 </div>
               </div>
 
@@ -416,11 +474,11 @@
         { id: 3, title: 'Follow-Up Calls (5 Warm Prospects)', date: todayStr, time: '14:00', completed: false }
       ],
       routines: [
-        { id: 101, title: 'Morning Huddle & Goal Alignment', mins: 30, day: 'Monday', nonNegotiable: true, selected: true },
-        { id: 102, title: 'Client Prospecting & Outreach', mins: 90, day: 'Tuesday', nonNegotiable: true, selected: true },
-        { id: 103, title: 'Proposal Preparation & Policy Servicing', mins: 60, day: 'Wednesday', nonNegotiable: false, selected: true },
-        { id: 104, title: 'Social Media & Personal Branding', mins: 45, day: 'Thursday', nonNegotiable: false, selected: false },
-        { id: 105, title: 'Monthly Portfolio & Production Audit', mins: 120, day: 'Scheduled', nonNegotiable: true, selected: true }
+        { id: 101, title: 'Morning Huddle & Goal Alignment', mode: 'duration', mins: 30, days: ['Monday', 'Wednesday', 'Friday'], nonNegotiable: true, selected: true },
+        { id: 102, title: 'Client Prospecting & Outreach', mode: 'duration', mins: 90, days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], nonNegotiable: true, selected: true },
+        { id: 103, title: 'Late Afternoon Client Follow-Up', mode: 'fixed', startTime: '17:00', endTime: '18:00', mins: 60, days: ['Tuesday', 'Thursday'], nonNegotiable: true, selected: true },
+        { id: 104, title: 'Proposal Preparation & Policy Servicing', mode: 'duration', mins: 60, days: ['Monday', 'Wednesday', 'Friday'], nonNegotiable: false, selected: true },
+        { id: 105, title: 'Social Media & Personal Branding', mode: 'duration', mins: 45, days: ['Saturday', 'Sunday'], nonNegotiable: false, selected: false }
       ],
       suddenTasks: [],
       clients: [
@@ -668,20 +726,105 @@
     // =========================================================================
     // 2. STRUCTURED WORKDAY & SMART TIME-BOXING ENGINE
     // =========================================================================
+    const ALL_WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const SHORT_DAY_MAP = {
+      Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed', Thursday: 'Thu',
+      Friday: 'Fri', Saturday: 'Sat', Sunday: 'Sun'
+    };
+
+    function setScheduleMode(mode) {
+      document.getElementById('rtScheduleMode').value = mode;
+      const btnDur = document.getElementById('modeBtnDuration');
+      const btnFix = document.getElementById('modeBtnFixed');
+      const blkDur = document.getElementById('rtDurationBlock');
+      const blkFix = document.getElementById('rtFixedTimeBlock');
+
+      if (mode === 'fixed') {
+        btnFix.className = 'py-1.5 px-2 rounded-md text-xs font-bold bg-white text-blue-900 shadow-xs transition';
+        btnDur.className = 'py-1.5 px-2 rounded-md text-xs font-semibold text-slate-600 hover:text-slate-900 transition';
+        blkDur.classList.add('hidden');
+        blkFix.classList.remove('hidden');
+      } else {
+        btnDur.className = 'py-1.5 px-2 rounded-md text-xs font-bold bg-white text-blue-900 shadow-xs transition';
+        btnFix.className = 'py-1.5 px-2 rounded-md text-xs font-semibold text-slate-600 hover:text-slate-900 transition';
+        blkFix.classList.add('hidden');
+        blkDur.classList.remove('hidden');
+      }
+    }
+
+    function selectPresetDays(preset) {
+      const checkboxes = document.querySelectorAll('input[name="rtDays"]');
+      checkboxes.forEach(cb => {
+        if (preset === 'all') {
+          cb.checked = true;
+        } else if (preset === 'weekdays') {
+          cb.checked = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].includes(cb.value);
+        } else {
+          cb.checked = false;
+        }
+      });
+    }
+
+    function getRoutineDays(r) {
+      if (Array.isArray(r.days) && r.days.length > 0) return r.days;
+      if (r.day && ALL_WEEKDAYS.includes(r.day)) return [r.day];
+      return ['Monday'];
+    }
+
+    function formatDaysBadge(days) {
+      if (days.length === 7) return 'Every Day (Mon–Sun)';
+      const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+      if (days.length === 5 && weekdays.every(d => days.includes(d))) return 'Weekdays (Mon–Fri)';
+      const weekends = ['Saturday', 'Sunday'];
+      if (days.length === 2 && weekends.every(d => days.includes(d))) return 'Weekends (Sat–Sun)';
+      return days.map(d => SHORT_DAY_MAP[d] || d).join(', ');
+    }
+
     function addRoutineTemplate(e) {
       e.preventDefault();
       const title = document.getElementById('rtTitle').value.trim();
-      const val = parseInt(document.getElementById('rtDurationVal').value, 10);
-      const unit = document.getElementById('rtDurationUnit').value;
-      const mins = unit === 'hrs' ? val * 60 : val;
-      const day = document.getElementById('rtDay').value;
+      const mode = document.getElementById('rtScheduleMode').value || 'duration';
+      const selectedDays = Array.from(document.querySelectorAll('input[name="rtDays"]:checked')).map(cb => cb.value);
+
+      if (selectedDays.length === 0) {
+        alert('Please select at least one Usual Day (Monday to Sunday).');
+        return;
+      }
+
+      let mins = 60;
+      let startTime = null;
+      let endTime = null;
+
+      if (mode === 'fixed') {
+        startTime = document.getElementById('rtStartTime').value;
+        endTime = document.getElementById('rtEndTime').value;
+        if (!startTime || !endTime) {
+          alert('Please enter both Start Time and End Time.');
+          return;
+        }
+        const sMins = timeToMins(startTime);
+        const eMins = timeToMins(endTime);
+        if (eMins <= sMins) {
+          alert('End Time must be later than Start Time.');
+          return;
+        }
+        mins = eMins - sMins;
+      } else {
+        const val = parseInt(document.getElementById('rtDurationVal').value, 10) || 60;
+        const unit = document.getElementById('rtDurationUnit').value;
+        mins = unit === 'hrs' ? val * 60 : val;
+      }
+
       const nonNegotiable = document.getElementById('rtNonNego').checked;
 
       state.routines.push({
         id: Date.now(),
         title,
+        mode,
         mins,
-        day,
+        startTime,
+        endTime,
+        days: selectedDays,
         nonNegotiable,
         selected: nonNegotiable ? true : false
       });
@@ -719,11 +862,18 @@
       const selectedNegoCount = negoItems.filter(r => r.selected).length;
       document.getElementById('selectedNegoBadge').textContent = `${selectedNegoCount} Selected`;
 
+      const formatTimeMeta = (r) => {
+        if (r.mode === 'fixed' && r.startTime && r.endTime) {
+          return `🕒 ${formatTime12(r.startTime)} – ${formatTime12(r.endTime)} (${formatDuration(r.mins)})`;
+        }
+        return `⏱ ${formatDuration(r.mins)}`;
+      };
+
       if (nonNegoItems.length === 0) {
         nonNegoContainer.innerHTML = `<p class="text-xs text-slate-400 italic">No non-negotiable activities yet.</p>`;
       } else {
         nonNegoContainer.innerHTML = nonNegoItems.map(r => {
-          const dayLabel = r.day;
+          const daysLabel = formatDaysBadge(getRoutineDays(r));
           return `
             <div class="p-2.5 rounded-lg border border-blue-200 bg-blue-50/40 flex items-center justify-between gap-2">
               <div>
@@ -731,7 +881,7 @@
                   <span class="text-xs font-bold text-blue-950">${r.title}</span>
                   <span class="px-1.5 py-0.5 rounded text-[10px] font-bold non-nego-badge">Auto-Included</span>
                 </div>
-                <div class="text-[11px] text-slate-600 mt-0.5">⏱ ${formatDuration(r.mins)} • 📅 ${dayLabel}</div>
+                <div class="text-[11px] text-slate-600 mt-0.5">${formatTimeMeta(r)} • 📅 ${daysLabel}</div>
               </div>
               <button onclick="deleteRoutine(${r.id})" title="Delete" class="text-slate-400 hover:text-red-500 font-bold px-1.5">&times;</button>
             </div>
@@ -743,7 +893,7 @@
         negoContainer.innerHTML = `<p class="text-xs text-slate-400 italic">No negotiable activities yet.</p>`;
       } else {
         negoContainer.innerHTML = negoItems.map(r => {
-          const dayLabel = r.day;
+          const daysLabel = formatDaysBadge(getRoutineDays(r));
           const isSelected = !!r.selected;
           return `
             <div class="p-2.5 rounded-lg border ${isSelected ? 'border-emerald-300 bg-emerald-50/40' : 'border-slate-200 bg-white'} flex items-center justify-between gap-2 transition">
@@ -751,7 +901,7 @@
                 <div class="flex items-center gap-1.5 flex-wrap">
                   <span class="text-xs font-bold text-slate-800">${r.title}</span>
                 </div>
-                <div class="text-[11px] text-slate-500 mt-0.5">⏱ ${formatDuration(r.mins)} • 📅 ${dayLabel}</div>
+                <div class="text-[11px] text-slate-500 mt-0.5">${formatTimeMeta(r)} • 📅 ${daysLabel}</div>
               </div>
               <div class="flex items-center gap-1.5 shrink-0">
                 <button type="button" onclick="toggleNegotiableSelection(${r.id})" class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${isSelected ? 'bg-emerald-600 text-white shadow-xs hover:bg-emerald-700' : 'bg-slate-100 text-slate-700 hover:bg-blue-100 hover:text-blue-800 border border-slate-300'}">
@@ -817,30 +967,49 @@
         </span>
       `).join('');
 
-      // Helper to check if a routine matches the selected date (either by weekday or matching Scheduled date)
-      const matchesSelectedDate = (r) =>
-        r.day === selectedDay || r.day === 'Scheduled';
+      // Check if routine includes the selected weekday
+      const matchesSelectedDate = (r) => getRoutineDays(r).includes(selectedDay);
 
-      // Non-negotiables matching selected date are AUTOMATICALLY included
-      const nonNegos = state.routines.filter(r => r.nonNegotiable && matchesSelectedDate(r));
+      // Active routines for this day
+      const activeNonNegos = state.routines.filter(r => r.nonNegotiable && matchesSelectedDate(r));
+      const activeNegos = state.routines.filter(r => !r.nonNegotiable && r.selected && matchesSelectedDate(r));
 
-      // Negotiables are included ONLY when user selected them (and matching selected date, or any selected negotiable if scheduled/matching day)
-      const flexibles = state.routines.filter(r => !r.nonNegotiable && r.selected && matchesSelectedDate(r));
+      // Separate fixed-time routines vs duration-based routines
+      const fixedRoutineBlocks = [
+        ...activeNonNegos.filter(r => r.mode === 'fixed' && r.startTime && r.endTime).map(r => ({
+          title: r.title,
+          start: timeToMins(r.startTime),
+          duration: Math.max(5, timeToMins(r.endTime) - timeToMins(r.startTime)),
+          type: 'NON-NEGO',
+          isFixedSlot: true
+        })),
+        ...activeNegos.filter(r => r.mode === 'fixed' && r.startTime && r.endTime).map(r => ({
+          title: r.title,
+          start: timeToMins(r.startTime),
+          duration: Math.max(5, timeToMins(r.endTime) - timeToMins(r.startTime)),
+          type: 'FLEXIBLE',
+          isFixedSlot: true
+        }))
+      ];
+
+      const durationNonNegos = activeNonNegos.filter(r => r.mode !== 'fixed');
+      const durationFlexibles = activeNegos.filter(r => r.mode !== 'fixed');
 
       const startMins = timeToMins(startTimeStr);
       const totalAvailable = Math.max(120, workdayEndMins - startMins);
       const suddenTotal = state.suddenTasks.reduce((acc, s) => acc + s.mins, 0);
-      const nonNegoTotal = nonNegos.reduce((acc, n) => acc + n.mins, 0);
-      const flexOriginalTotal = flexibles.reduce((acc, f) => acc + f.mins, 0);
+      const fixedRoutineTotal = fixedRoutineBlocks.reduce((acc, f) => acc + f.duration, 0);
+      const nonNegoTotal = durationNonNegos.reduce((acc, n) => acc + n.mins, 0);
+      const flexOriginalTotal = durationFlexibles.reduce((acc, f) => acc + f.mins, 0);
 
-      let remainingForFlex = totalAvailable - suddenTotal - nonNegoTotal;
+      let remainingForFlex = totalAvailable - suddenTotal - fixedRoutineTotal - nonNegoTotal;
       let flexScale = 1;
       let adjustmentMsg = '';
 
       if (state.suddenTasks.length > 0 && flexOriginalTotal > 0) {
         if (remainingForFlex < flexOriginalTotal) {
           flexScale = Math.max(0.4, remainingForFlex / flexOriginalTotal);
-          adjustmentMsg = `⚡ <strong>Smart Re-Balance Active:</strong> Inserted ${state.suddenTasks.length} urgent activity (${suddenTotal} mins). All <strong>Non-Negotiables remain 100% intact</strong>, while flexible tasks were automatically scaled to ${Math.round(flexScale * 100)}% duration to fit your workday.`;
+          adjustmentMsg = `⚡ <strong>Smart Re-Balance Active:</strong> Inserted ${state.suddenTasks.length} urgent activity (${suddenTotal} mins). All <strong>Non-Negotiables & Fixed Time Slots remain intact</strong>, while duration-based negotiable tasks were scaled to ${Math.round(flexScale * 100)}% to fit your workday.`;
         }
       }
 
@@ -852,17 +1021,20 @@
         alertBox.classList.add('hidden');
       }
 
-      // Build ordered queue: Fixed sudden tasks pinned at their time, other tasks slotted around them
-      const fixedBlocks = state.suddenTasks.map(s => ({
-        title: s.title,
-        start: timeToMins(s.time),
-        duration: s.mins,
-        type: 'SUDDEN'
-      })).sort((a, b) => a.start - b.start);
+      // Build ordered queue: Pinned blocks (urgent tasks + fixed time routines) vs duration queue
+      const fixedBlocks = [
+        ...state.suddenTasks.map(s => ({
+          title: s.title,
+          start: timeToMins(s.time),
+          duration: s.mins,
+          type: 'SUDDEN'
+        })),
+        ...fixedRoutineBlocks
+      ].sort((a, b) => a.start - b.start);
 
       const queue = [
-        ...nonNegos.map(n => ({ title: n.title, duration: n.mins, type: 'NON-NEGO' })),
-        ...flexibles.map(f => ({
+        ...durationNonNegos.map(n => ({ title: n.title, duration: n.mins, type: 'NON-NEGO' })),
+        ...durationFlexibles.map(f => ({
           title: f.title,
           duration: Math.max(15, Math.round((f.mins * flexScale) / 5) * 5),
           originalDuration: f.mins,
@@ -873,12 +1045,13 @@
       let cursor = startMins;
       const finalSlots = [];
 
-      // Slot tasks cleanly without overlapping fixed sudden tasks
+      // Slot duration-based tasks cleanly without overlapping pinned/fixed blocks
       for (const task of queue) {
         let placed = false;
         while (!placed) {
-          // Insert lunch break automatically around 12:00 PM if cursor hits 12:00-13:00
-          if (cursor >= 12 * 60 && cursor < 13 * 60 && !finalSlots.some(s => s.type === 'BREAK')) {
+          // Insert lunch break automatically around 12:00 PM if cursor hits 12:00-13:00 and no fixed block occupies it
+          const lunchConflict = fixedBlocks.some(fb => (12 * 60 < fb.start + fb.duration) && (13 * 60 > fb.start));
+          if (cursor >= 12 * 60 && cursor < 13 * 60 && !lunchConflict && !finalSlots.some(s => s.type === 'BREAK')) {
             finalSlots.push({ title: 'Lunch & Recharge Break', start: cursor, duration: 60, type: 'BREAK' });
             cursor += 60;
             continue;
@@ -901,7 +1074,7 @@
         }
       }
 
-      // Add any remaining fixed blocks that were scheduled later in the day
+      // Add any remaining pinned/fixed blocks scheduled later in the day
       fixedBlocks.forEach(fb => {
         if (!finalSlots.includes(fb)) finalSlots.push(fb);
       });
@@ -911,7 +1084,7 @@
 
       const timeline = document.getElementById('timeboxTimeline');
       if (finalSlots.length === 0) {
-        timeline.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">Add monthly recurring activities on the left to generate your structured workday.</p>`;
+        timeline.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">No recurring activities scheduled for <strong>${selectedDay}</strong>. Add or select activities on the left.</p>`;
         return;
       }
 
@@ -931,6 +1104,10 @@
           badge = `<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-200 text-slate-700">Break</span>`;
         }
 
+        const fixedTag = slot.isFixedSlot
+          ? `<span class="ml-1.5 px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800 text-[10px] font-bold">🕒 Fixed Time</span>`
+          : '';
+
         const adjustedNote = (slot.originalDuration && slot.originalDuration !== slot.duration)
           ? `<span class="text-[10px] text-amber-700 ml-1">(Adjusted from ${slot.originalDuration}m)</span>` : '';
 
@@ -941,7 +1118,7 @@
                 ${minsToTime12(slot.start)} – ${minsToTime12(end)}
               </div>
               <div>
-                <div class="text-xs sm:text-sm font-bold text-slate-800">${slot.title}</div>
+                <div class="text-xs sm:text-sm font-bold text-slate-800">${slot.title}${fixedTag}</div>
                 <div class="text-[11px] text-slate-500">Duration: ${formatDuration(slot.duration)} ${adjustedNote}</div>
               </div>
             </div>
